@@ -68,6 +68,7 @@ INSERT INTO satellites (satellite_name, planet_id) VALUES ('Mars Satellite 1', (
 INSERT INTO satellites (satellite_name, planet_id) VALUES ('Mercury Satellite 1', (SELECT planet_id FROM planets WHERE name = 'Mercury'));
 INSERT INTO satellites (satellite_name, planet_id) VALUES ('Venus Satellite 1', (SELECT planet_id FROM planets WHERE name = 'Venus'));
 
+
 CREATE TABLE spaceships (
 	spaceship_id serial PRIMARY KEY,
 	spaceship_name VARCHAR(50) NOT NULL,
@@ -86,6 +87,22 @@ INSERT INTO spaceships (spaceship_name, spaceship_type, people_capacity, fuel_re
 INSERT INTO spaceships (spaceship_name, spaceship_type, people_capacity, fuel_reserve, max_speed) VALUES ('Leonov', 1, 150, 10000, 3200);
 INSERT INTO spaceships (spaceship_name, spaceship_type, people_capacity, fuel_reserve, max_speed) VALUES ('DEATH STAR', 2, 5000, 30332000, 2000);
 INSERT INTO spaceships (spaceship_name, spaceship_type, people_capacity, fuel_reserve, max_speed) VALUES ('Chehov', 3, 200, 10000, 3300);
+INSERT INTO spaceships (spaceship_name, spaceship_type, people_capacity, fuel_reserve, max_speed) VALUES ('Little Boy', 2, 1, 3250, 800);
+
+CREATE FUNCTION check_spaceship_capacity() RETURNS TRIGGER AS $$
+		BEGIN
+			IF (SELECT COUNT(*) FROM astronauts WHERE spaceship_id = NEW.spaceship_id) >= (SELECT people_capacity FROM spaceships WHERE spaceship_id = NEW.spaceship_id) THEN
+				RAISE EXCEPTION 'Cant add a new astronaut to the ship - the ship is full!';
+			END IF;
+			RETURN NEW;			
+		END;
+$$ LANGUAGE PLPGSQL;
+
+CREATE TRIGGER check_astronaut_insert
+	BEFORE INSERT ON astronauts
+	FOR EACH ROW
+	EXECUTE FUNCTION check_spaceship_capacity();
+
 
 CREATE TABLE astronauts (
 	astronaut_id serial PRIMARY KEY,
@@ -106,6 +123,7 @@ INSERT INTO astronauts (astronaut_name, astronaut_surname, astronaut_age, rank_i
 INSERT INTO astronauts (astronaut_name, astronaut_surname, astronaut_age, rank_id, occupation_id, spaceship_id) VALUES ('Paul', 'McCartney', 81, 4, 2, 1);
 INSERT INTO astronauts (astronaut_name, astronaut_surname, astronaut_age, rank_id, occupation_id, spaceship_id) VALUES ('George', 'Harrison', 58, 2, 2, 1);
 INSERT INTO astronauts (astronaut_name, astronaut_surname, astronaut_age, rank_id, occupation_id, spaceship_id) VALUES ('Ringo', 'Starr', 83, 3, 3, 1);
+INSERT INTO astronauts (astronaut_name, astronaut_surname, astronaut_age, rank_id, occupation_id, spaceship_id) VALUES ('Till', 'Lindemann', 60, 4, 3, 5);
 
 CREATE TABLE space_flights (
 	flight_id serial PRIMARY KEY,
@@ -117,3 +135,4 @@ CREATE TABLE space_flights (
 INSERT INTO space_flights (spaceship_id, planet_id_from, planet_id_to) VALUES (1, 1, 2);
 INSERT INTO space_flights (spaceship_id, planet_id_from, planet_id_to) VALUES (2, 2, 3);
 INSERT INTO space_flights (spaceship_id, planet_id_from, planet_id_to) VALUES (3, 3, 4);
+
